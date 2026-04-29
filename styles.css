@@ -16,9 +16,9 @@
         .player-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
         .player-name { width: 75%; font-size: 18px; font-weight: bold; text-align: center; border: none; background: transparent; border-bottom: 2px solid #ccc; }
         .color-icon { width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer; background: #444; color: white; font-size: 16px; line-height: 1; }
-        .color-palette { display: none; position: absolute; top: 58px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.96); padding: 6px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.16); z-index: 10; }
-        .color-palette.show { display: flex; }
-        .color-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; margin: 2px; padding: 0; cursor: pointer; }
+        .color-palette { display: none; position: absolute; top: 58px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.96); padding: 8px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.16); z-index: 10; grid-template-columns: repeat(5, 32px); gap: 6px; }
+        .color-palette.show { display: grid; }
+        .color-swatch { width: 32px; height: 32px; border-radius: 50%; border: 2px solid white; padding: 0; cursor: pointer; }
         .score-display { font-size: 90px; font-weight: bold; line-height: 1; }
         .set-count { font-size: 24px; font-weight: bold; color: #555; }
         .add-btn { width: 80%; height: 60px; font-size: 24px; font-weight: bold; border: none; border-radius: 10px; color: white; transition: background-color 0.2s ease, color 0.2s ease; }
