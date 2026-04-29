@@ -1,4 +1,4 @@
-        let state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, history: [] };
+        let state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] };
         let undoStack = []; let redoStack = [];
 
         function saveToUndo() { undoStack.push(JSON.stringify(state)); }
@@ -8,6 +8,8 @@
             document.getElementById('score2').innerText = state.score2;
             document.getElementById('sets1').innerText = state.sets1;
             document.getElementById('sets2').innerText = state.sets2;
+            document.getElementById('zone1').style.backgroundColor = state.player1Color;
+            document.getElementById('zone2').style.backgroundColor = state.player2Color;
             const server = calculateServer();
             document.getElementById('zone1').classList.toggle('serving', server === 1);
             document.getElementById('zone2').classList.toggle('serving', server === 2);
@@ -15,6 +17,7 @@
             historyDiv.innerHTML = state.history.slice().reverse().map(h => 
                 `<div class="history-item"><span>${h.time}</span><span>${h.msg}</span><span>${h.res}</span></div>`
             ).join('');
+            closePalettes();
         }
 
         function calculateServer() {
@@ -38,8 +41,27 @@
                 addLog("--- セット終了 ---", `${state.score1}-${state.score2}`);
                 state.score1 = 0; state.score2 = 0;
                 if (state.initialServer) state.initialServer = 3 - state.initialServer;
-                doSwapCourts({ skipUndo: true });
+                doSwapCourts({ skipUndo: true, skipLog: true });
+                addLog("自動コートチェンジ", `${state.score1}-${state.score2}`);
             }
+        }
+
+        function togglePalette(player) {
+            closePalettes();
+            const palette = document.getElementById('palette' + player);
+            palette.classList.toggle('show');
+        }
+
+        function closePalettes() {
+            [1, 2].forEach(n => document.getElementById('palette' + n).classList.remove('show'));
+        }
+
+        function selectPlayerColor(player, color) {
+            saveToUndo(); redoStack = [];
+            state['player' + player + 'Color'] = color;
+            closePalettes();
+            addLog(`選手${player}カラー変更`, color);
+            updateUI();
         }
 
         function addLog(msg, res) {
@@ -61,6 +83,7 @@
             document.getElementById('name2').value = n1;
             [state.score1, state.score2] = [state.score2, state.score1];
             [state.sets1, state.sets2] = [state.sets2, state.sets1];
+            [state.player1Color, state.player2Color] = [state.player2Color, state.player1Color];
             if (state.initialServer) state.initialServer = 3 - state.initialServer;
             if (!options.skipLog) {
                 addLog('コートチェンジ', `${state.score1}-${state.score2}`);
@@ -70,7 +93,7 @@
         function swapCourts() {
             doSwapCourts();
         }
-        function resetAll() { if (confirm("リセットしますか？")) { state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, history: [] }; updateUI(); } }
+        function resetAll() { if (confirm("リセットしますか？")) { state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] }; updateUI(); } }
 
         // --- 独自テキストフォーマットのセーブ・ロード ---
 
@@ -81,6 +104,7 @@
             // 人間が見やすいフォーマットを作成
             let txt = `[TT_SCORE_v3]\n`;
             txt += `PLAYERS|${n1}|${n2}\n`;
+            txt += `COLORS|${state.player1Color}|${state.player2Color}\n`;
             txt += `SETS|${state.sets1}|${state.sets2}\n`;
             txt += `POINTS|${state.score1}|${state.score2}\n`;
             txt += `SERVER|${state.initialServer}\n`;
@@ -124,6 +148,9 @@
                     } else if (line.startsWith("POINTS")) {
                         state.score1 = parseInt(parts[1]);
                         state.score2 = parseInt(parts[2]);
+                    } else if (line.startsWith("COLORS")) {
+                        state.player1Color = parts[1] || '#ffebee';
+                        state.player2Color = parts[2] || '#e3f2fd';
                     } else if (line.startsWith("SERVER")) {
                         state.initialServer = parts[1] === "null" ? null : parseInt(parts[1]);
                     } else if (line.startsWith("HISTORY_START")) {
@@ -144,5 +171,11 @@
                 alert("読み込み中にエラーが発生しました");
             }
         }
+
+        document.addEventListener('click', event => {
+            if (!event.target.closest('.color-icon') && !event.target.closest('.color-palette')) {
+                closePalettes();
+            }
+        });
 
         updateUI();

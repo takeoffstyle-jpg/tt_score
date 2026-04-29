@@ -21,7 +21,17 @@
     <div class="match-area">
         <div id="zone1" class="player-zone p1">
             <div class="serve-indicator">SERVE 🏓</div>
-            <input type="text" id="name1" class="player-name" value="選手A">
+            <div class="player-name-row">
+                <input type="text" id="name1" class="player-name" value="選手A">
+                <button type="button" class="color-icon" onclick="togglePalette(1)" title="色を変更">🎨</button>
+            </div>
+            <div class="color-palette" id="palette1" aria-hidden="true">
+                <button type="button" class="color-swatch" style="background:#f44336;" onclick="selectPlayerColor(1, '#f44336')"></button>
+                <button type="button" class="color-swatch" style="background:#ff9800;" onclick="selectPlayerColor(1, '#ff9800')"></button>
+                <button type="button" class="color-swatch" style="background:#4caf50;" onclick="selectPlayerColor(1, '#4caf50')"></button>
+                <button type="button" class="color-swatch" style="background:#3f51b5;" onclick="selectPlayerColor(1, '#3f51b5')"></button>
+                <button type="button" class="color-swatch" style="background:#9c27b0;" onclick="selectPlayerColor(1, '#9c27b0')"></button>
+            </div>
             <div id="score1" class="score-display">0</div>
             <div class="set-count" id="sets1">0</div>
             <button class="add-btn" onclick="addPoint(1)">+1</button>
@@ -29,7 +39,17 @@
         </div>
         <div id="zone2" class="player-zone p2">
             <div class="serve-indicator">SERVE 🏓</div>
-            <input type="text" id="name2" class="player-name" value="選手B">
+            <div class="player-name-row">
+                <input type="text" id="name2" class="player-name" value="選手B">
+                <button type="button" class="color-icon" onclick="togglePalette(2)" title="色を変更">🎨</button>
+            </div>
+            <div class="color-palette" id="palette2" aria-hidden="true">
+                <button type="button" class="color-swatch" style="background:#2196f3;" onclick="selectPlayerColor(2, '#2196f3')"></button>
+                <button type="button" class="color-swatch" style="background:#00bcd4;" onclick="selectPlayerColor(2, '#00bcd4')"></button>
+                <button type="button" class="color-swatch" style="background:#8bc34a;" onclick="selectPlayerColor(2, '#8bc34a')"></button>
+                <button type="button" class="color-swatch" style="background:#ffeb3b;" onclick="selectPlayerColor(2, '#ffeb3b')"></button>
+                <button type="button" class="color-swatch" style="background:#795548;" onclick="selectPlayerColor(2, '#795548')"></button>
+            </div>
             <div id="score2" class="score-display">0</div>
             <div class="set-count" id="sets2">0</div>
             <button class="add-btn" onclick="addPoint(2)">+1</button>
