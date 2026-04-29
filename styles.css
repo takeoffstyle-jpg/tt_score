@@ -21,9 +21,7 @@
         .color-swatch { width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; margin: 2px; padding: 0; cursor: pointer; }
         .score-display { font-size: 90px; font-weight: bold; line-height: 1; }
         .set-count { font-size: 24px; font-weight: bold; color: #555; }
-        .add-btn { width: 80%; height: 60px; font-size: 24px; font-weight: bold; border: none; border-radius: 10px; color: white; }
-        .p1 .add-btn { background-color: var(--player1-accent); }
-        .p2 .add-btn { background-color: var(--player2-accent); }
+        .add-btn { width: 80%; height: 60px; font-size: 24px; font-weight: bold; border: none; border-radius: 10px; color: white; transition: background-color 0.2s ease, color 0.2s ease; }
         .history-container { flex: 1; overflow-y: auto; background: #fafafa; padding: 10px; border-top: 2px solid #444; }
         .history-item { display: flex; justify-content: space-between; padding: 4px 8px; margin-bottom: 2px; background: white; font-size: 12px; border-bottom: 1px solid #ddd; }
         .footer { display: flex; padding: 8px; background: #222; gap: 10px; }
