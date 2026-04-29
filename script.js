@@ -38,6 +38,7 @@
                 addLog("--- セット終了 ---", `${state.score1}-${state.score2}`);
                 state.score1 = 0; state.score2 = 0;
                 if (state.initialServer) state.initialServer = 3 - state.initialServer;
+                doSwapCourts({ skipUndo: true });
             }
         }
 
@@ -50,8 +51,10 @@
         function undo() { if (undoStack.length) { redoStack.push(JSON.stringify(state)); state = JSON.parse(undoStack.pop()); updateUI(); } }
         function redo() { if (redoStack.length) { undoStack.push(JSON.stringify(state)); state = JSON.parse(redoStack.pop()); updateUI(); } }
         function setInitialServer(p) { saveToUndo(); state.initialServer = p; updateUI(); }
-        function swapCourts() {
-            saveToUndo(); redoStack = [];
+        function doSwapCourts(options = {}) {
+            if (!options.skipUndo) {
+                saveToUndo(); redoStack = [];
+            }
             const n1 = document.getElementById('name1').value;
             const n2 = document.getElementById('name2').value;
             document.getElementById('name1').value = n2;
@@ -59,8 +62,13 @@
             [state.score1, state.score2] = [state.score2, state.score1];
             [state.sets1, state.sets2] = [state.sets2, state.sets1];
             if (state.initialServer) state.initialServer = 3 - state.initialServer;
-            addLog('コートチェンジ', `${state.score1}-${state.score2}`);
+            if (!options.skipLog) {
+                addLog('コートチェンジ', `${state.score1}-${state.score2}`);
+            }
             updateUI();
+        }
+        function swapCourts() {
+            doSwapCourts();
         }
         function resetAll() { if (confirm("リセットしますか？")) { state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, history: [] }; updateUI(); } }
 
