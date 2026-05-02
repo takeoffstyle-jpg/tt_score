@@ -153,9 +153,9 @@
             const now = new Date();
             const time = now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0') + ":" + String(now.getSeconds()).padStart(2, '0');
             const entry = { time, msg, res };
-            if (action1) entry.action1 = action1;  // 技術: 'Atk' or 'Def'
+            if (action1) entry.action1 = action1;  // 技術: 'Atk' or 'Def' or 'Pas'
             if (action2) entry.action2 = action2;  // ラバー面: 'Fore' or 'Back' or '?'
-            if (action3) entry.action3 = action3;  // 第2選択結果: NT / 2B / T-Own / T-Out
+            if (action3) entry.action3 = action3;  // 第2選択結果: NT / 2B / T-Own / T-Out / Miss / Unknown
             state.history.push(entry);
         }
 
@@ -335,10 +335,12 @@
             menu.style.transform = 'translate(-50%, -50%)';
             
             const actions = [
-                { label: 'NT', value: 'NoTouch' },
-                { label: '2B', value: '2Bounce' },
-                { label: 'T-Own', value: 'TouchOwn' },
-                { label: 'T-Out', value: 'TouchOut' }
+                { label: 'ノータッチ', value: 'NoTouch' },
+                { label: '２バウンド', value: '2Bounce' },
+                { label: 'タッチ自陣', value: 'TouchOwn' },
+                { label: 'タッチアウト', value: 'TouchOut' },
+                { label: '空振り', value: 'Miss' },
+                { label: '不明', value: 'Unknown' }
             ];
             
             let html = '<div class="flick-info">技術: ' + (flickResult.action || '?') + ' / 面: ' + (flickResult.rubberFace || '?') + '</div>';
@@ -383,7 +385,9 @@
                 NoTouch: 'NT',
                 '2Bounce': '2B',
                 TouchOwn: 'T-Own',
-                TouchOut: 'T-Out'
+                TouchOut: 'T-Out',
+                Miss: 'Miss',
+                Unknown: 'Unknown'
             }[action2Value] || action2Value;
             const msg = playerName + ' 得点 [' + flickInfo.action + (flickInfo.rubberFace ? '・' + flickInfo.rubberFace : '') + ']';
             
