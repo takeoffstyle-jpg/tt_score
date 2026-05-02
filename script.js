@@ -1,5 +1,8 @@
         let state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] };
         let undoStack = []; let redoStack = [];
+        
+        // フリック検出用の状態管理
+        let touchState = { startX: 0, startY: 0, startTime: 0, player: null, longPressTimer: null, isFlick: false };
 
         function saveToUndo() { undoStack.push(JSON.stringify(state)); }
 
@@ -24,9 +27,13 @@
             zone1.classList.toggle('serving', server === 1);
             zone2.classList.toggle('serving', server === 2);
             const historyDiv = document.getElementById('history');
-            historyDiv.innerHTML = state.history.slice().reverse().map(h => 
-                `<div class="history-item"><span>${h.time}</span><span>${h.msg}</span><span>${h.res}</span></div>`
-            ).join('');
+            historyDiv.innerHTML = state.history.slice().reverse().map(h => {
+                let details = '';
+                if (h.action1 || h.action2) {
+                    details = ` [${h.action1 || ''}${h.action1 && h.action2 ? '・' : ''}${h.action2 || ''}]`;
+                }
+                return `<div class="history-item"><span>${h.time}</span><span>${h.msg}${details}</span><span>${h.res}</span></div>`;
+            }).join('');
             closePalettes();
         }
 
@@ -137,10 +144,13 @@
             updateUI();
         }
 
-        function addLog(msg, res) {
+        function addLog(msg, res, action1 = null, action2 = null) {
             const now = new Date();
             const time = now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0') + ":" + String(now.getSeconds()).padStart(2, '0');
-            state.history.push({ time, msg, res });
+            const entry = { time, msg, res };
+            if (action1) entry.action1 = action1;  // 技術: 'Atk' or 'Def'
+            if (action2) entry.action2 = action2;  // ラバー面: 'Fore' or 'Back'
+            state.history.push(entry);
         }
 
         function undo() { if (undoStack.length) { redoStack.push(JSON.stringify(state)); state = JSON.parse(undoStack.pop()); updateUI(); } }
@@ -166,7 +176,7 @@
         function swapCourts() {
             doSwapCourts();
         }
-        function resetAll() { if (confirm("リセットしますか？")) { state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] }; updateUI(); } }
+        function resetAll() { if (confirm("リセットしますか？")) { state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] }; closeActionMenu(); closeFlickGuide(); updateUI(); } }
 
         // --- 独自テキストフォーマットのセーブ・ロード ---
 
@@ -245,10 +255,223 @@
             }
         }
 
+        // フリック検出: 6方向判定
+        function detectFlickDirection(startX, startY, endX, endY, isPlayer2) {
+            let dx = endX - startX;
+            let dy = endY - startY;
+            
+            // 左右の場合は角度系で判定
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            if (distance < 30) return null; // 最小フリック距離
+            
+            // atan2(dy, dx) 0度=右、90度=下、180/−180度=左、−90度=上
+            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // プレイヤー2は左右反転（dxの符号を反転）
+            if (isPlayer2) {
+                angle = 180 - angle;
+                if (angle > 180) angle -= 360;
+            }
+            
+            // 角度を0-360に正規化
+            if (angle < 0) angle += 360;
+            
+            let direction = null, action = null, rubberFace = null;
+            
+            // 6方向判定（角度範囲）
+            // 0度=右、90度=下、180度=左、270度=上
+            // ※Player1: 上=守り/Def、下=攻め/Atk
+            // ※Player2: 上=攻め/Atk、下=守り/Def（左右反転済み）
+            
+            const normalizeAngle = (a) => a > 180 ? a - 360 : a;
+            angle = normalizeAngle(angle);
+            
+            if (angle > -45 && angle <= 45) {
+                // 右水平: 攻め
+                direction = 'right';
+                action = 'Atk';
+                rubberFace = null;
+            } else if (angle > 45 && angle <= 135) {
+                // 下方向: 攻め・フォア
+                direction = 'down';
+                action = 'Atk';
+                rubberFace = 'Fore';
+            } else if (angle > 135 || angle <= -135) {
+                // 左水平: 守り
+                direction = 'left';
+                action = 'Def';
+                rubberFace = null;
+            } else if (angle > -135 && angle <= -45) {
+                // 上方向: 守り・バック
+                direction = 'up';
+                action = 'Def';
+                rubberFace = 'Back';
+            }
+            
+            return { direction, action, rubberFace, angle: Math.round(angle * 10) / 10 };
+        }
+
+        // メニュー表示
+        function showActionMenu(endX, endY, player, flickResult) {
+            closeActionMenu();
+            
+            const menu = document.createElement('div');
+            menu.id = 'action-menu';
+            menu.className = 'action-menu';
+            menu.style.left = endX + 'px';
+            menu.style.top = endY + 'px';
+            
+            const actions = [
+                { label: 'NT', value: 'NoTouch' },
+                { label: '2B', value: '2Bounce' },
+                { label: 'T-Own', value: 'TouchOwn' },
+                { label: 'T-Out', value: 'TouchOut' }
+            ];
+            
+            let html = '<div class="flick-info">技術: ' + (flickResult.action || '?') + ' / 面: ' + (flickResult.rubberFace || '?') + '</div>';
+            html += '<div class="menu-buttons">';
+            actions.forEach(a => {
+                html += `<button onclick="selectAction(${player}, '${a.value}')">${a.label}</button>`;
+            });
+            html += '</div>';
+            
+            menu.innerHTML = html;
+            document.body.appendChild(menu);
+            
+            // 背景をタップでメニュー閉じる
+            setTimeout(() => {
+                document.addEventListener('click', closeActionMenuOnBgClick);
+            }, 10);
+        }
+
+        function closeActionMenuOnBgClick(e) {
+            if (!e.target.closest('#action-menu')) {
+                closeActionMenu();
+                document.removeEventListener('click', closeActionMenuOnBgClick);
+            }
+        }
+
+        function closeActionMenu() {
+            const menu = document.getElementById('action-menu');
+            if (menu) menu.remove();
+        }
+
+        function selectAction(player, action2Value) {
+            const flickInfo = window.lastFlickInfo;
+            if (!flickInfo) return;
+            
+            const playerName = document.getElementById('name' + player).value;
+            const msg = playerName + ' 得点 [' + flickInfo.action + (flickInfo.rubberFace ? '・' + flickInfo.rubberFace : '') + ']';
+            
+            saveToUndo(); redoStack = [];
+            state['score' + player]++;
+            addLog(msg, `${state.score1}-${state.score2}`, flickInfo.action, flickInfo.rubberFace);
+            checkSet(); 
+            closeActionMenu();
+            updateUI();
+        }
+
+        // タッチイベントハンドラ初期化
+        function initTouchHandlers() {
+            [1, 2].forEach(player => {
+                const zone = document.getElementById('zone' + player);
+                if (!zone) return;
+                
+                zone.addEventListener('touchstart', e => {
+                    touchState.startX = e.touches[0].clientX;
+                    touchState.startY = e.touches[0].clientY;
+                    touchState.startTime = Date.now();
+                    touchState.player = player;
+                    touchState.isFlick = false;
+                    closeActionMenu();
+                    
+                    // 長押し検出（1秒後にガイド表示）
+                    touchState.longPressTimer = setTimeout(() => {
+                        if (!touchState.isFlick) {
+                            showFlickGuide(player, touchState.startX, touchState.startY);
+                        }
+                    }, 1000);
+                });
+                
+                zone.addEventListener('touchmove', e => {
+                    if (touchState.startX === null) return;
+                    clearTimeout(touchState.longPressTimer);
+                    touchState.isFlick = true;
+                });
+                
+                zone.addEventListener('touchend', e => {
+                    clearTimeout(touchState.longPressTimer);
+                    
+                    const endX = e.changedTouches[0].clientX;
+                    const endY = e.changedTouches[0].clientY;
+                    const duration = Date.now() - touchState.startTime;
+                    
+                    // タップ判定（移動距離<30px、時間<200ms）
+                    const dx = endX - touchState.startX;
+                    const dy = endY - touchState.startY;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const isQuickTap = distance < 30 && duration < 200 && !touchState.isFlick;
+                    
+                    if (isQuickTap) {
+                        // 通常の得点
+                        addPoint(player);
+                    } else if (touchState.isFlick && distance > 30) {
+                        // フリック検出
+                        const flickResult = detectFlickDirection(touchState.startX, touchState.startY, endX, endY, player === 2);
+                        if (flickResult) {
+                            window.lastFlickInfo = flickResult;
+                            showActionMenu(endX, endY, player, flickResult);
+                        }
+                    }
+                    
+                    touchState.startX = 0;
+                    touchState.startY = 0;
+                    touchState.isFlick = false;
+                });
+            });
+        }
+
+        // フリックガイド表示（長押し時）
+        function showFlickGuide(player, x, y) {
+            closeFlickGuide();
+            
+            const guide = document.createElement('div');
+            guide.id = 'flick-guide';
+            guide.className = 'flick-guide';
+            guide.style.left = (x - 80) + 'px';
+            guide.style.top = (y - 80) + 'px';
+            
+            const directions = [
+                { label: '↗ Atk/Back', dir: 'upright' },
+                { label: '→ Atk', dir: 'right' },
+                { label: '↙ Atk/Fore', dir: 'downright' },
+                { label: '↖ Def/Back', dir: 'upleft' },
+                { label: '← Def', dir: 'left' },
+                { label: '↙ Def/Fore', dir: 'downleft' }
+            ];
+            
+            let html = '<div class="guide-title">フリック方向ガイド</div>';
+            directions.forEach(d => {
+                html += `<div class="guide-item">${d.label}</div>`;
+            });
+            
+            guide.innerHTML = html;
+            document.body.appendChild(guide);
+            
+            setTimeout(() => closeFlickGuide(), 2000);
+        }
+
+        function closeFlickGuide() {
+            const guide = document.getElementById('flick-guide');
+            if (guide) guide.remove();
+        }
+
         document.addEventListener('click', event => {
             if (!event.target.closest('.color-icon') && !event.target.closest('.color-palette')) {
                 closePalettes();
             }
         });
 
+        // タッチハンドラ初期化
+        initTouchHandlers();
         updateUI();
