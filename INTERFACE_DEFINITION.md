@@ -40,6 +40,7 @@
 ### 役割
 - ページ全体のレイアウト、配色、ボタン・履歴表示のスタイルを定義する。
 - プレイヤーゾーンの背景やカラー選択パレット、サーブ表示の見た目を指定する。
+- フリック関連のメニューとガイドのスタイルを定義する。
 
 ---
 
@@ -49,6 +50,7 @@
 - `state`: 現在のスコア、セット数、初期サーバー、選手カラー、履歴を保持するオブジェクト。
 - `undoStack`: 変更前の `state` を JSON 文字列で保存する配列。
 - `redoStack`: Undo 後の状態を保存する配列。
+- `touchState`: フリック検出用のタッチ状態を管理するオブジェクト。
 
 ### 関数一覧
 
@@ -102,7 +104,7 @@
 - 戻り値: `string` (`#222222` もしくは `#ffffff`)
 
 #### `addPoint(p)`
-- 役割: 指定プレイヤーに1点加算し、セット判定・履歴・UI を更新する。
+- 役割: 指定プレイヤーに1点加算し、セット判定・UI を更新する。メニュー表示中は無効。
 - 引数:
   - `p` (`number`): `1` または `2`
 - 戻り値: なし
@@ -130,11 +132,14 @@
   - `color` (`string`): `#rrggbb` 形式のカラーコード
 - 戻り値: なし
 
-#### `addLog(msg, res)`
+#### `addLog(msg, res, action1 = null, action2 = null, action3 = null)`
 - 役割: 現在時刻付きの履歴エントリを `state.history` に追加する。
 - 引数:
   - `msg` (`string`): 操作内容の説明
   - `res` (`string`): 結果テキスト（例: `0-0`）
+  - `action1` (`string`, 任意): 技術（Atk/Def/Pas）
+  - `action2` (`string`, 任意): ラバー面（Fore/Back/?）
+  - `action3` (`string`, 任意): 第2選択結果（NT/2B/T-Own/T-Out）
 - 戻り値: なし
 
 #### `undo()`
@@ -181,6 +186,67 @@
 - 引数: なし
 - 戻り値: なし
 
+#### `detectFlickDirection(startX, startY, endX, endY, isPlayer2)`
+- 役割: フリック方向を8方向に判定し、技術・ラバー面を決定する。
+- 引数:
+  - `startX` (`number`): タッチ開始X座標
+  - `startY` (`number`): タッチ開始Y座標
+  - `endX` (`number`): タッチ終了X座標
+  - `endY` (`number`): タッチ終了Y座標
+  - `isPlayer2` (`boolean`): プレイヤー2エリアかどうか
+- 戻り値: `{ direction: string, action: string, rubberFace: string, angle: number }` または `null`
+
+#### `showActionMenu(endX, endY, player, flickResult)`
+- 役割: フリック結果に基づき、第2選択メニューを画面中央に表示する。
+- 引数:
+  - `endX` (`number`): タッチ終了X座標（未使用）
+  - `endY` (`number`): タッチ終了Y座標（未使用）
+  - `player` (`number`): プレイヤー番号
+  - `flickResult` (`object`): フリック判定結果
+- 戻り値: なし
+
+#### `closeActionMenuOnBgClick(e)`
+- 役割: メニュー外クリック時にフリック情報のみで得点を記録し、メニューを閉じる。
+- 引数:
+  - `e` (`Event`): クリックイベント
+- 戻り値: なし
+
+#### `closeActionMenu()`
+- 役割: アクションメニューを非表示にする。
+- 引数: なし
+- 戻り値: なし
+
+#### `selectAction(player, action2Value)`
+- 役割: 第2選択を確定し、得点・詳細ログを記録する。
+- 引数:
+  - `player` (`number`): プレイヤー番号
+  - `action2Value` (`string`): 選択値（NoTouch/2Bounce/TouchOwn/TouchOut）
+- 戻り値: なし
+
+#### `commitFlickWithoutResult(player)`
+- 役割: フリック情報のみで得点を記録する（第2選択なし）。
+- 引数:
+  - `player` (`number`): プレイヤー番号
+- 戻り値: なし
+
+#### `initTouchHandlers()`
+- 役割: プレイヤーゾーンにタッチイベントハンドラを登録する。
+- 引数: なし
+- 戻り値: なし
+
+#### `showFlickGuide(player, x, y)`
+- 役割: 長押し時に8方向フリックガイドを表示する。
+- 引数:
+  - `player` (`number`): プレイヤー番号
+  - `x` (`number`): 表示X座標
+  - `y` (`number`): 表示Y座標
+- 戻り値: なし
+
+#### `closeFlickGuide()`
+- 役割: フリックガイドを非表示にする。
+- 引数: なし
+- 戻り値: なし
+
 ---
 
 ## 5. 補足
@@ -188,3 +254,4 @@
 - `script.js` の関数はすべて `window` グローバルスコープに公開され、`index.html` の `onclick` 属性から直接呼び出せる構成です。
 - `styles.css` は関数を持ちませんが、`script.js` の状態変化を視覚的に反映するスタイルを提供します。
 - `index.html` は UI 構造と `script.js` の関数呼び出しの接点を担います。
+- フリック機能により、得点記録時に技術・ラバー面・結末詳細を記録可能。
