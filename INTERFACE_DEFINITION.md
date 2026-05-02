@@ -139,7 +139,7 @@
   - `res` (`string`): 結果テキスト（例: `0-0`）
   - `action1` (`string`, 任意): 技術（Atk/Def/Pas）
   - `action2` (`string`, 任意): ラバー面（Fore/Back/?）
-  - `action3` (`string`, 任意): 第2選択結果（NT/2B/T-Own/T-Out）
+  - `action3` (`string`, 任意): 第2選択結果（NT/2B/T-Own/T-Out/Miss/Unknown）
 - 戻り値: なし
 
 #### `undo()`
@@ -197,7 +197,7 @@
 - 戻り値: `{ direction: string, action: string, rubberFace: string, angle: number }` または `null`
 
 #### `showActionMenu(endX, endY, player, flickResult)`
-- 役割: フリック結果に基づき、第2選択メニューを画面中央に表示する。
+- 役割: フリック結果に基づき、第2選択メニューを画面中央に表示する。メニュー項目はノータッチ・２バウンド・タッチ自陣・タッチアウト・空振り・不明の6択。
 - 引数:
   - `endX` (`number`): タッチ終了X座標（未使用）
   - `endY` (`number`): タッチ終了Y座標（未使用）
@@ -220,7 +220,7 @@
 - 役割: 第2選択を確定し、得点・詳細ログを記録する。
 - 引数:
   - `player` (`number`): プレイヤー番号
-  - `action2Value` (`string`): 選択値（NoTouch/2Bounce/TouchOwn/TouchOut）
+  - `action2Value` (`string`): 選択値（NoTouch/2Bounce/TouchOwn/TouchOut/Miss/Unknown）
 - 戻り値: なし
 
 #### `commitFlickWithoutResult(player)`
