@@ -69,8 +69,8 @@
         
         .flick-guide {
             position: fixed;
-            width: 160px;
-            height: 160px;
+            width: 224px;
+            height: 224px;
             background: rgba(0,0,0,0.8);
             border-radius: 50%;
             z-index: 999;
@@ -84,17 +84,21 @@
             justify-items: center;
         }
         .guide-title {
-            grid-column: 1 / -1;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
-            text-align: center;
-            order: -1;
+            display: none; /* タイトル削除 */
         }
         .guide-item {
             color: white;
-            font-size: 10px;
+            font-size: 12px;
             font-weight: bold;
             text-align: center;
             padding: 2px;
+            border-radius: 4px;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
+        .guide-item.atk { background: rgba(244, 67, 54, 0.8); } /* 赤: 攻撃 */
+        .guide-item.pas { background: rgba(33, 150, 243, 0.8); } /* 青: 維持 */
+        .guide-item.def { background: rgba(76, 175, 80, 0.8); } /* 緑: 守り */

@@ -478,26 +478,27 @@
             const guide = document.createElement('div');
             guide.id = 'flick-guide';
             guide.className = 'flick-guide';
-            guide.style.left = (x - 80) + 'px';
-            guide.style.top = (y - 80) + 'px';
+            guide.style.left = (x - 112) + 'px'; // 224/2 = 112
+            guide.style.top = (y - 112) + 'px';
             
             const directions = [
-                { label: '↖ Def / Fore', dir: 'upleft' },
-                { label: '↑ Pas / Fore', dir: 'up' },
-                { label: '↗ Atk / Fore', dir: 'upright' },
-                { label: '← Def / ? ', dir: 'left' },
-                { label: '→ Atk / ? ', dir: 'right' },
-                { label: '↘ Atk / Back', dir: 'downright' },
-                { label: '↓ Pas / Back', dir: 'down' },
-                { label: '↙ Def / Back', dir: 'downleft' }
+                { label: 'F守', class: 'def' }, // upleft
+                { label: 'F続', class: 'pas' }, // up
+                { label: 'F攻', class: 'atk' }, // upright
+                { label: '守', class: 'def' },  // left
+                { label: '攻', class: 'atk' },  // right
+                { label: 'B攻', class: 'atk' }, // downright
+                { label: 'B続', class: 'pas' }, // down
+                { label: 'B守', class: 'def' }  // downleft
             ];
             
-            let html = '<div class="guide-title">フリック方向ガイド</div>';
             directions.forEach(d => {
-                html += `<div class="guide-item">${d.label}</div>`;
+                const item = document.createElement('div');
+                item.className = `guide-item ${d.class}`;
+                item.textContent = d.label;
+                guide.appendChild(item);
             });
             
-            guide.innerHTML = html;
             document.body.appendChild(guide);
             
             setTimeout(() => closeFlickGuide(), 2000);
