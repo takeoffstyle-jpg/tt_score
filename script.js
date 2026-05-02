@@ -29,8 +29,12 @@
             const historyDiv = document.getElementById('history');
             historyDiv.innerHTML = state.history.slice().reverse().map(h => {
                 let details = '';
-                if (h.action1 || h.action2) {
-                    details = ` [${h.action1 || ''}${h.action1 && h.action2 ? '・' : ''}${h.action2 || ''}]`;
+                if (h.action1 || h.action2 || h.action3) {
+                    details = ' [';
+                    if (h.action1) details += h.action1;
+                    if (h.action2) details += (h.action1 ? '・' : '') + h.action2;
+                    if (h.action3) details += (h.action1 || h.action2 ? ' / ' : '') + h.action3;
+                    details += ']';
                 }
                 return `<div class="history-item"><span>${h.time}</span><span>${h.msg}${details}</span><span>${h.res}</span></div>`;
             }).join('');
@@ -109,6 +113,7 @@
         }
 
         function addPoint(p) {
+            if (document.getElementById('action-menu')) return; // メニュー表示中は通常得点を無効（重複防止）
             saveToUndo(); redoStack = [];
             if (p === 1) state.score1++; else state.score2++;
             addLog(document.getElementById('name' + p).value + " 得点", `${state.score1}-${state.score2}`);
@@ -144,12 +149,13 @@
             updateUI();
         }
 
-        function addLog(msg, res, action1 = null, action2 = null) {
+        function addLog(msg, res, action1 = null, action2 = null, action3 = null) {
             const now = new Date();
             const time = now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0') + ":" + String(now.getSeconds()).padStart(2, '0');
             const entry = { time, msg, res };
             if (action1) entry.action1 = action1;  // 技術: 'Atk' or 'Def'
-            if (action2) entry.action2 = action2;  // ラバー面: 'Fore' or 'Back'
+            if (action2) entry.action2 = action2;  // ラバー面: 'Fore' or 'Back' or '?'
+            if (action3) entry.action3 = action3;  // 第2選択結果: NT / 2B / T-Own / T-Out
             state.history.push(entry);
         }
 
@@ -255,57 +261,63 @@
             }
         }
 
-        // フリック検出: 6方向判定
+        // フリック検出: 8方向判定
         function detectFlickDirection(startX, startY, endX, endY, isPlayer2) {
             let dx = endX - startX;
             let dy = endY - startY;
             
-            // 左右の場合は角度系で判定
+            // プレイヤー2は左右反転（内側が攻め、外側が守り）
+            if (isPlayer2) dx = -dx;
+            
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < 30) return null; // 最小フリック距離
             
-            // atan2(dy, dx) 0度=右、90度=下、180/−180度=左、−90度=上
-            let angle = Math.atan2(dy, dx) * 180 / Math.PI;
-            
-            // プレイヤー2は左右反転（dxの符号を反転）
-            if (isPlayer2) {
-                angle = 180 - angle;
-                if (angle > 180) angle -= 360;
-            }
-            
-            // 角度を0-360に正規化
-            if (angle < 0) angle += 360;
+            const rawAngle = Math.atan2(dy, dx) * 180 / Math.PI; // 0度=右、90度=下、-90度=上
+            const angle = rawAngle < 0 ? rawAngle + 360 : rawAngle;
+            const octant = Math.floor((angle + 22.5) / 45) % 8;
             
             let direction = null, action = null, rubberFace = null;
-            
-            // 6方向判定（角度範囲）
-            // 0度=右、90度=下、180度=左、270度=上
-            // ※Player1: 上=守り/Def、下=攻め/Atk
-            // ※Player2: 上=攻め/Atk、下=守り/Def（左右反転済み）
-            
-            const normalizeAngle = (a) => a > 180 ? a - 360 : a;
-            angle = normalizeAngle(angle);
-            
-            if (angle > -45 && angle <= 45) {
-                // 右水平: 攻め
-                direction = 'right';
-                action = 'Atk';
-                rubberFace = null;
-            } else if (angle > 45 && angle <= 135) {
-                // 下方向: 攻め・フォア
-                direction = 'down';
-                action = 'Atk';
-                rubberFace = 'Fore';
-            } else if (angle > 135 || angle <= -135) {
-                // 左水平: 守り
-                direction = 'left';
-                action = 'Def';
-                rubberFace = null;
-            } else if (angle > -135 && angle <= -45) {
-                // 上方向: 守り・バック
-                direction = 'up';
-                action = 'Def';
-                rubberFace = 'Back';
+            switch (octant) {
+                case 0: // 右
+                    direction = 'right';
+                    action = 'Atk';
+                    rubberFace = '?';
+                    break;
+                case 1: // 右下
+                    direction = 'downright';
+                    action = 'Atk';
+                    rubberFace = 'Back';
+                    break;
+                case 2: // 下
+                    direction = 'down';
+                    action = 'Pas';
+                    rubberFace = 'Back';
+                    break;
+                case 3: // 左下
+                    direction = 'downleft';
+                    action = 'Def';
+                    rubberFace = 'Back';
+                    break;
+                case 4: // 左
+                    direction = 'left';
+                    action = 'Def';
+                    rubberFace = '?';
+                    break;
+                case 5: // 左上
+                    direction = 'upleft';
+                    action = 'Def';
+                    rubberFace = 'Fore';
+                    break;
+                case 6: // 上
+                    direction = 'up';
+                    action = 'Pas';
+                    rubberFace = 'Fore';
+                    break;
+                case 7: // 右上
+                    direction = 'upright';
+                    action = 'Atk';
+                    rubberFace = 'Fore';
+                    break;
             }
             
             return { direction, action, rubberFace, angle: Math.round(angle * 10) / 10 };
@@ -318,8 +330,9 @@
             const menu = document.createElement('div');
             menu.id = 'action-menu';
             menu.className = 'action-menu';
-            menu.style.left = endX + 'px';
-            menu.style.top = endY + 'px';
+            menu.style.left = '50%';
+            menu.style.top = '50%';
+            menu.style.transform = 'translate(-50%, -50%)';
             
             const actions = [
                 { label: 'NT', value: 'NoTouch' },
@@ -337,6 +350,8 @@
             
             menu.innerHTML = html;
             document.body.appendChild(menu);
+            window.currentFlickPlayer = player;
+            window.lastFlickInfo = flickResult;
             
             // 背景をタップでメニュー閉じる
             setTimeout(() => {
@@ -346,6 +361,9 @@
 
         function closeActionMenuOnBgClick(e) {
             if (!e.target.closest('#action-menu')) {
+                if (window.currentFlickPlayer && window.lastFlickInfo) {
+                    commitFlickWithoutResult(window.currentFlickPlayer);
+                }
                 closeActionMenu();
                 document.removeEventListener('click', closeActionMenuOnBgClick);
             }
@@ -361,13 +379,35 @@
             if (!flickInfo) return;
             
             const playerName = document.getElementById('name' + player).value;
+            const resultLabel = {
+                NoTouch: 'NT',
+                '2Bounce': '2B',
+                TouchOwn: 'T-Own',
+                TouchOut: 'T-Out'
+            }[action2Value] || action2Value;
             const msg = playerName + ' 得点 [' + flickInfo.action + (flickInfo.rubberFace ? '・' + flickInfo.rubberFace : '') + ']';
             
             saveToUndo(); redoStack = [];
             state['score' + player]++;
-            addLog(msg, `${state.score1}-${state.score2}`, flickInfo.action, flickInfo.rubberFace);
+            addLog(msg, `${state.score1}-${state.score2}`, flickInfo.action, flickInfo.rubberFace, resultLabel);
             checkSet(); 
             closeActionMenu();
+            window.currentFlickPlayer = null;
+            window.lastFlickInfo = null;
+            updateUI();
+        }
+
+        function commitFlickWithoutResult(player) {
+            const flickInfo = window.lastFlickInfo;
+            if (!flickInfo) return;
+            const playerName = document.getElementById('name' + player).value;
+            const msg = playerName + ' 得点 [' + flickInfo.action + (flickInfo.rubberFace ? '・' + flickInfo.rubberFace : '') + ']';
+            saveToUndo(); redoStack = [];
+            state['score' + player]++;
+            addLog(msg, `${state.score1}-${state.score2}`, flickInfo.action, flickInfo.rubberFace, null);
+            checkSet();
+            window.currentFlickPlayer = null;
+            window.lastFlickInfo = null;
             updateUI();
         }
 
@@ -442,12 +482,14 @@
             guide.style.top = (y - 80) + 'px';
             
             const directions = [
-                { label: '↗ Atk/Back', dir: 'upright' },
-                { label: '→ Atk', dir: 'right' },
-                { label: '↙ Atk/Fore', dir: 'downright' },
-                { label: '↖ Def/Back', dir: 'upleft' },
-                { label: '← Def', dir: 'left' },
-                { label: '↙ Def/Fore', dir: 'downleft' }
+                { label: '↖ Def / Fore', dir: 'upleft' },
+                { label: '↑ Pas / Fore', dir: 'up' },
+                { label: '↗ Atk / Fore', dir: 'upright' },
+                { label: '← Def / ? ', dir: 'left' },
+                { label: '→ Atk / ? ', dir: 'right' },
+                { label: '↘ Atk / Back', dir: 'downright' },
+                { label: '↓ Pas / Back', dir: 'down' },
+                { label: '↙ Def / Back', dir: 'downleft' }
             ];
             
             let html = '<div class="guide-title">フリック方向ガイド</div>';
