@@ -13,11 +13,11 @@
 
 ## 2. `index.html`
 
-`index.html` 自体には JavaScript 関数定義はありません。
+`index.html` 自体には JavaScript 関数定義は含まれていません。
 
 ### 役割
 - UI レイアウトと各ボタンのクリックイベントの割り当てを提供する。
-- `script.js` 内の関数を `onclick` 経由で呼び出す構造になっている。
+- `script.js` 内の関数を `onclick` 属性から呼び出す構造になっている。
 
 ### 主要なイベントハンドラ
 - `onclick="undo()"`
@@ -47,12 +47,43 @@
 ## 4. `script.js`
 
 ### グローバル状態
-- `state`: 現在のスコア、セット数、初期サーバー、選手カラー、履歴を保持するオブジェクト。
+- `state`: 現在のゲーム状態を保持するオブジェクト。
 - `undoStack`: 変更前の `state` を JSON 文字列で保存する配列。
 - `redoStack`: Undo 後の状態を保存する配列。
 - `touchState`: フリック検出用のタッチ状態を管理するオブジェクト。
 
+### `state` のキー
+- `score1` (`number`): プレイヤー1 の現在得点。
+- `score2` (`number`): プレイヤー2 の現在得点。
+- `sets1` (`number`): プレイヤー1 のセット獲得数。
+- `sets2` (`number`): プレイヤー2 のセット獲得数。
+- `initialServer` (`number|null`): 試合開始時のサーバー。`1` または `2`、未設定時は `null`。
+- `scorer` (`number|null`): 直近得点者を表す論理プレイヤー番号。`1` または `2`。
+- `player1` (`string`): 画面左側 `zone1` に表示される選手名。
+- `player2` (`string`): 画面右側 `zone2` に表示される選手名。
+- `playSide` (`number`): `scorer` 値の画面対応を定義するフラグ。
+  - `1` は `zone1` が `scorer = 1`、`zone2` が `scorer = 2`。
+  - `2` は `zone1` が `scorer = 2`、`zone2` が `scorer = 1`。
+- `player1Color` (`string`): `zone1` の背景カラー。
+- `player2Color` (`string`): `zone2` の背景カラー。
+- `history` (`Array<object>`): 履歴エントリの配列。
+
+初期化は `resetState()` 関数で行われ、立ち上げ時および `resetAll()` で呼び出されます。
+
+#### 履歴エントリの構造
+- `time` (`string`): `HH:MM:SS` 形式の記録時刻。
+- `msg` (`string`): 操作説明。
+- `res` (`string`): 試合スコア表記（例: `1-0`）。
+- `scorer` (`number`, 任意): `1` または `2`。画面の列配置で得点者を判断する。
+- `action1` (`string`, 任意): 技術タイプ（`Atk` / `Def` / `Pas`）。
+- `action2` (`string`, 任意): ラバー面（`Fore` / `Back` / `?`）。
+- `action3` (`string`, 任意): 第2選択結果（`NT` / `2B` / `T-Own` / `T-Out` / `Miss` / `Unknown`）。
+
 ### 関数一覧
+#### `resetState()`
+- 役割: Stateを初期化する。
+- 引数: なし
+- 戻り値: なし
 
 #### `saveToUndo()`
 - 役割: 現在の `state` を `undoStack` に保存する。
@@ -60,7 +91,7 @@
 - 戻り値: なし
 
 #### `updateUI()`
-- 役割: 現在の `state` を画面に反映し、サーブ表示や履歴を更新する。
+- 役割: 現在の `state` を画面に反映し、サーブ表示・履歴表示を更新する。
 - 引数: なし
 - 戻り値: なし
 
@@ -104,13 +135,13 @@
 - 戻り値: `string` (`#222222` もしくは `#ffffff`)
 
 #### `addPoint(p)`
-- 役割: 指定プレイヤーに1点加算し、セット判定・UI を更新する。メニュー表示中は無効。
+- 役割: 指定プレイヤーに1点加算し、`state.scorer` を更新してセット判定・UI を更新する。メニュー表示中は無効。
 - 引数:
   - `p` (`number`): `1` または `2`
 - 戻り値: なし
 
 #### `checkSet()`
-- 役割: 11 点先取かつ 2 点差でセット成立判定を行い、セット数更新とコートチェンジを行う。
+- 役割: 11 点先取かつ 2 点差でセット成立判定を行い、セット数を更新し、必要に応じてコートチェンジを行う。
 - 引数: なし
 - 戻り値: なし
 
@@ -132,23 +163,24 @@
   - `color` (`string`): `#rrggbb` 形式のカラーコード
 - 戻り値: なし
 
-#### `addLog(msg, res, action1 = null, action2 = null, action3 = null)`
+#### `addLog(msg, res, scorer = null, action1 = null, action2 = null, action3 = null)`
 - 役割: 現在時刻付きの履歴エントリを `state.history` に追加する。
 - 引数:
   - `msg` (`string`): 操作内容の説明
   - `res` (`string`): 結果テキスト（例: `0-0`）
-  - `action1` (`string`, 任意): 技術（Atk/Def/Pas）
-  - `action2` (`string`, 任意): ラバー面（Fore/Back/?）
-  - `action3` (`string`, 任意): 第2選択結果（NT/2B/T-Own/T-Out/Miss/Unknown）
+  - `scorer` (`number|null`, 任意): `1` または `2`。画面表示でどちらの列に記録を表示するかを判定する。
+  - `action1` (`string`, 任意): 技術（`Atk` / `Def` / `Pas`）
+  - `action2` (`string`, 任意): ラバー面（`Fore` / `Back` / `?`）
+  - `action3` (`string`, 任意): 第2選択結果（`NT` / `2B` / `T-Own` / `T-Out` / `Miss` / `Unknown`）
 - 戻り値: なし
 
 #### `undo()`
-- 役割: `undoStack` から直前状態を復元し、画面を更新する。
+- 役割: `undoStack` から直前状態を復元し、UI を更新する。
 - 引数: なし
 - 戻り値: なし
 
 #### `redo()`
-- 役割: `redoStack` から取り消した状態を再適用し、画面を更新する。
+- 役割: `redoStack` から取り消した状態を再適用し、UI を更新する。
 - 引数: なし
 - 戻り値: なし
 
@@ -159,7 +191,7 @@
 - 戻り値: なし
 
 #### `doSwapCourts(options = {})`
-- 役割: 選手名、スコア、セット数、色、初期サーバーを入れ替え、必要なら履歴・Undo を処理する。
+- 役割: 選手名、スコア、セット数、色、`playSide`、初期サーバーを入れ替え、必要なら履歴・Undo を処理する。
 - 引数:
   - `options` (`object`, 任意)
     - `skipUndo` (`boolean`): `true` の場合、Undo スタックに保存しない。
@@ -230,12 +262,12 @@
 - 戻り値: なし
 
 #### `initTouchHandlers()`
-- 役割: プレイヤーゾーンにタッチイベントハンドラを登録する。
+- 役割: プレイヤーの得点ボタンにタッチイベントハンドラを登録する。
 - 引数: なし
 - 戻り値: なし
 
 #### `showFlickGuide(player, x, y)`
-- 役割: 長押し時に8方向フリックガイドを表示する。ガイドは224pxサイズで、タイトルなし、各方向に色分けされた短いラベル（F守/F続/F攻/守/攻/B攻/B続/B守）を表示する。
+- 役割: 長押し時に8方向フリックガイドを表示する。ガイドは224pxサイズで、各方向に短いラベルと色分けを表示する。
 - 引数:
   - `player` (`number`): プレイヤー番号
   - `x` (`number`): 表示X座標
@@ -251,7 +283,6 @@
 
 ## 5. 補足
 
-- `script.js` の関数はすべて `window` グローバルスコープに公開され、`index.html` の `onclick` 属性から直接呼び出せる構成です。
-- `styles.css` は関数を持ちませんが、`script.js` の状態変化を視覚的に反映するスタイルを提供します。
-- `index.html` は UI 構造と `script.js` の関数呼び出しの接点を担います。
-- フリック機能により、得点記録時に技術・ラバー面・結末詳細を記録可能。
+- `script.js` の関数は `window` グローバルスコープに公開され、`index.html` から呼び出される設計です。
+- `state.playSide` はコートチェンジ後も得点者判定を一貫して行うために使用します。
+- 履歴表示は `state.history` を逆順に描画し、固定幅の列でテーブル風に見せています。

@@ -1,15 +1,19 @@
-        let state = {
-            score1: 0, score2: 0,
-            sets1: 0, sets2: 0,
-            initialServer: null,
-            scorer: null,
-            player1:"選手A",
-            player2:"選手B",
-            playSide: 1, // 1=左側がプレイヤー1、2=右側がプレイヤー1
-            player1Color: '#ffebee',
-            player2Color: '#e3f2fd',
-            history: []
-        };
+        let state = {};
+        function resetState(){
+            state = {
+                score1: 0, score2: 0,
+                sets1: 0, sets2: 0,
+                initialServer: null,
+                scorer: null,
+                player1:"選手A",
+                player2:"選手B",
+                playSide: 1, // 1=左側がプレイヤー1、2=右側がプレイヤー1
+                player1Color: '#ffebee',
+                player2Color: '#e3f2fd',
+                history: []
+            };
+        }
+        resetState();
         let undoStack = []; let redoStack = [];
 
         // フリック検出用の状態管理
@@ -226,8 +230,13 @@
         function swapCourts() {
             doSwapCourts();
         }
-        function resetAll() { if (confirm("リセットしますか？")) { state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] }; closeActionMenu(); closeFlickGuide(); updateUI(); } }
-
+        function resetAll() { if (confirm("リセットしますか？")) {
+            resetState();
+            closeActionMenu();
+            closeFlickGuide();
+            updateUI(); 
+        } }
+    
         // --- 独自テキストフォーマットのセーブ・ロード ---
 
         function exportData() {
