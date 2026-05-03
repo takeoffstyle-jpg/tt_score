@@ -119,6 +119,7 @@
             align-items: center;
             justify-content: center;
         }
+        .guide-item.ctr { background: rgba(194, 194, 194, 0.8); } /* 中央 */
         .guide-item.atk { background: rgba(244, 67, 54, 0.8); } /* 赤: 攻撃 */
         .guide-item.pas { background: rgba(33, 150, 243, 0.8); } /* 青: 維持 */
-        .guide-item.def { background: rgba(76, 175, 80, 0.8); } /* 緑: 守り */
+        .guide-item.def { background: rgba(111, 111, 111, 0.8); } /* 緑: 守り */

@@ -554,18 +554,32 @@ function showFlickGuide(player, x, y) {
     guide.className = 'flick-guide';
     guide.style.left = (x - 112) + 'px'; // 224/2 = 112
     guide.style.top = (y - 112) + 'px';
-    
-    const directions = [
-        { label: 'F守', class: 'def' }, // upleft
-        { label: 'F続', class: 'pas' }, // up
-        { label: 'F攻', class: 'atk' }, // upright
-        { label: '守', class: 'def' },  // left
-        { label: '攻', class: 'atk' },  // right
-        { label: 'B攻', class: 'atk' }, // downright
-        { label: 'B続', class: 'pas' }, // down
-        { label: 'B守', class: 'def' }  // downleft
-    ];
-    
+    let directions;
+    if(player == 1){
+        directions = [
+            { label: 'F守', class: 'def' }, // upleft
+            { label: 'F続', class: 'pas' }, // up
+            { label: 'F攻', class: 'atk' }, // upright
+            { label: '守', class: 'def' },  // left
+            { label: '+', class: 'ctr' }, // center
+            { label: '攻', class: 'atk' },  // right
+            { label: 'B守', class: 'def' },  // downleft
+            { label: 'B続', class: 'pas' }, // down
+            { label: 'B攻', class: 'atk' } // downright
+        ];
+    }else{
+        directions = [
+            { label: 'F攻', class: 'atk' }, 
+            { label: 'F続', class: 'pas' }, 
+            { label: 'F守', class: 'def' }, 
+            { label: '攻', class: 'atk' },  
+            { label: '+', class: 'ctr' }, 
+            { label: '守', class: 'def' }, 
+            { label: 'B攻', class: 'atk' },
+            { label: 'B続', class: 'pas' },
+            { label: 'B守', class: 'def' }
+        ];
+    }
     directions.forEach(d => {
         const item = document.createElement('div');
         item.className = `guide-item ${d.class}`;
@@ -575,7 +589,7 @@ function showFlickGuide(player, x, y) {
     
     document.body.appendChild(guide);
     
-    setTimeout(() => closeFlickGuide(), 2000);
+    setTimeout(() => closeFlickGuide(), 10000);
 }
 
 function closeFlickGuide() {
