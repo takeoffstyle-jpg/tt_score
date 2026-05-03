@@ -1,6 +1,17 @@
-        let state = { score1: 0, score2: 0, sets1: 0, sets2: 0, initialServer: null, player1Color: '#ffebee', player2Color: '#e3f2fd', history: [] };
+        let state = {
+            score1: 0, score2: 0,
+            sets1: 0, sets2: 0,
+            initialServer: null,
+            scorer: null,
+            player1:"選手A",
+            player2:"選手B",
+            playSide: 1, // 1=左側がプレイヤー1、2=右側がプレイヤー1
+            player1Color: '#ffebee',
+            player2Color: '#e3f2fd',
+            history: []
+        };
         let undoStack = []; let redoStack = [];
-        
+
         // フリック検出用の状態管理
         let touchState = { startX: 0, startY: 0, startTime: 0, player: null, longPressTimer: null, isFlick: false };
 
@@ -11,6 +22,8 @@
             document.getElementById('score2').innerText = state.score2;
             document.getElementById('sets1').innerText = state.sets1;
             document.getElementById('sets2').innerText = state.sets2;
+            document.getElementById('name1').innerText = state.player1;
+            document.getElementById('name2').innerText = state.player2;
             const zone1 = document.getElementById('zone1');
             const zone2 = document.getElementById('zone2');
             zone1.style.backgroundColor = state.player1Color;
@@ -27,16 +40,35 @@
             zone1.classList.toggle('serving', server === 1);
             zone2.classList.toggle('serving', server === 2);
             const historyDiv = document.getElementById('history');
+            // strがnull/undefinedなら空文字に変換し、文字列としてパディングする
+            const p = (str, len) => {
+                const s = (str !== null && str !== undefined) ? String(str) : "";
+                return s.padEnd(len, " ");
+            };
             historyDiv.innerHTML = state.history.slice().reverse().map(h => {
-                let details = '';
-                if (h.action1 || h.action2 || h.action3) {
-                    details = ' [';
-                    if (h.action1) details += h.action1;
-                    if (h.action2) details += (h.action1 ? '・' : '') + h.action2;
-                    if (h.action3) details += (h.action1 || h.action2 ? ' / ' : '') + h.action3;
-                    details += ']';
+                let scorer, player1, player2;
+                
+                scorer = (state.playSide === h.scorer) ? 1 : 2;
+                if (scorer==1){
+                    player1 = state.player1;
+                    player2 = '';
+                }else{
+                    player1 = '';
+                    player2 = state.player2;
                 }
-                return `<div class="history-item"><span>${h.time}</span><span>${h.msg}${details}</span><span>${h.res}</span></div>`;
+                if(h.scorer){
+                    return `<div class="history-item">
+                    <span>${p(h.time,8)}</span>
+                    <span>${p(player1,5)}</span>
+                    <span>${p(player2,5)}</span>
+                    <span>${p(h.action1,3)}</span>
+                    <span>${p(h.action2,4)}</span>
+                    <span>${p(h.action3,10)}</span>
+                    <span>${p(`${h.res}`,5)}</span>
+                    </div>`;
+                }else{
+                    return `<div class="history-item"><span>${h.time}</span><span>${h.msg}</span><span>${h.res}</span></div>`;
+                }
             }).join('');
             closePalettes();
         }
@@ -115,8 +147,17 @@
         function addPoint(p) {
             if (document.getElementById('action-menu')) return; // メニュー表示中は通常得点を無効（重複防止）
             saveToUndo(); redoStack = [];
-            if (p === 1) state.score1++; else state.score2++;
-            addLog(document.getElementById('name' + p).value + " 得点", `${state.score1}-${state.score2}`);
+            if (p === 1){
+                state.score1++;
+                state.scorer = 1;
+            }else{
+                state.score2++;
+                state.scorer = 2;
+             }
+            scorerName = p === 1 ? state.player1 : state.player2;
+            state.scorer = (state.playSide === p) ? 1 : 2; // コートチェンジしても不変なScorer
+            addLog(scorerName + " 得点", `${state.score1}-${state.score2}`, state.scorer);
+            
             checkSet(); updateUI();
         }
 
@@ -149,10 +190,11 @@
             updateUI();
         }
 
-        function addLog(msg, res, action1 = null, action2 = null, action3 = null) {
+        function addLog(msg, res, scorer=null, action1 = null, action2 = null, action3 = null) {
             const now = new Date();
             const time = now.getHours() + ":" + String(now.getMinutes()).padStart(2, '0') + ":" + String(now.getSeconds()).padStart(2, '0');
             const entry = { time, msg, res };
+            if (scorer) entry.scorer = scorer;  // A=選手A, B=選手B
             if (action1) entry.action1 = action1;  // 技術: 'Atk' or 'Def' or 'Pas'
             if (action2) entry.action2 = action2;  // ラバー面: 'Fore' or 'Back' or '?'
             if (action3) entry.action3 = action3;  // 第2選択結果: NT / 2B / T-Own / T-Out / Miss / Unknown
@@ -172,7 +214,9 @@
             document.getElementById('name2').value = n1;
             [state.score1, state.score2] = [state.score2, state.score1];
             [state.sets1, state.sets2] = [state.sets2, state.sets1];
+            [state.player1, state.player2] = [state.player2, state.player1];
             [state.player1Color, state.player2Color] = [state.player2Color, state.player1Color];
+            state.playSide = 3 - state.playSide; // コートチェンジでプレイサイドも反転
             if (state.initialServer) state.initialServer = 3 - state.initialServer;
             if (!options.skipLog) {
                 addLog('コートチェンジ', `${state.score1}-${state.score2}`);
@@ -190,6 +234,10 @@
             const n1 = document.getElementById('name1').value;
             const n2 = document.getElementById('name2').value;
             
+            // 存在しない時は、””をに変えるhelper関数
+            const p = (str) => {
+                return (str !== null && str !== undefined) ? String(str) : "";
+            };
             // 人間が見やすいフォーマットを作成
             let txt = `[TT_SCORE_v3]\n`;
             txt += `PLAYERS|${n1}|${n2}\n`;
@@ -199,7 +247,8 @@
             txt += `SERVER|${state.initialServer}\n`;
             txt += `HISTORY_START\n`;
             state.history.forEach(h => {
-                txt += `${h.time},${h.msg},${h.res},${h.action1},${h.action2},${h.action3}\n`;
+                // 全てp関数で存在しない値を空文字に変換してから、カンマ区切りで保存
+                txt += `${p(h.time)},${p(h.msg)},${p(h.res)},${p(h.scorer)},${p(h.action1)},${p(h.action2)},${p(h.action3)}\n`;
             });
             txt += `HISTORY_END`;
 
@@ -248,14 +297,15 @@
                         inHistory = false;
                     } else if (inHistory) {
                         const hParts = line.split(",");
-                        if (hParts.length === 6) {
+                        if (hParts.length === 7) {
                             newHistory.push({
                                 time: hParts[0],
                                 msg: hParts[1],
                                 res: hParts[2],
-                                action1: hParts[3],
-                                action2: hParts[4],
-                                action3: hParts[5]
+                                scorer: parseInt(hParts[3]),
+                                action1: hParts[4],
+                                action2: hParts[5],
+                                action3: hParts[6]
                             });
                         }
                     }
@@ -400,7 +450,10 @@
             
             saveToUndo(); redoStack = [];
             state['score' + player]++;
-            addLog(msg, `${state.score1}-${state.score2}`, flickInfo.action, flickInfo.rubberFace, resultLabel);
+            // コートチェンジしても不変なScorer
+           state.scorer = (state.playSide === player) ? 1 : 2;
+
+            addLog(msg, `${state.score1}-${state.score2}`, state.scorer, flickInfo.action, flickInfo.rubberFace, resultLabel);
             checkSet(); 
             closeActionMenu();
             window.currentFlickPlayer = null;
@@ -415,7 +468,8 @@
             const msg = playerName + ' 得点 [' + flickInfo.action + (flickInfo.rubberFace ? '・' + flickInfo.rubberFace : '') + ']';
             saveToUndo(); redoStack = [];
             state['score' + player]++;
-            addLog(msg, `${state.score1}-${state.score2}`, flickInfo.action, flickInfo.rubberFace, null);
+            state.scorer = (state.playSide === player) ? 1 : 2;
+            addLog(msg, `${state.score1}-${state.score2}`, state.scorer, flickInfo.action, flickInfo.rubberFace, null);
             checkSet();
             window.currentFlickPlayer = null;
             window.lastFlickInfo = null;
@@ -424,11 +478,11 @@
 
         // タッチイベントハンドラ初期化
         function initTouchHandlers() {
-            [1, 2].forEach(player => {
-                const zone = document.getElementById('zone' + player);
-                if (!zone) return;
+            [1,2].forEach(player=> {
+                const addbtn = document.getElementById('add-btn' + player);
+                if (!addbtn) return;
                 
-                zone.addEventListener('touchstart', e => {
+                addbtn.addEventListener('touchstart', e => {
                     touchState.startX = e.touches[0].clientX;
                     touchState.startY = e.touches[0].clientY;
                     touchState.startTime = Date.now();
@@ -444,13 +498,13 @@
                     }, 1000);
                 });
                 
-                zone.addEventListener('touchmove', e => {
+                addbtn.addEventListener('touchmove', e => {
                     if (touchState.startX === null) return;
                     clearTimeout(touchState.longPressTimer);
                     touchState.isFlick = true;
                 });
                 
-                zone.addEventListener('touchend', e => {
+                addbtn.addEventListener('touchend', e => {
                     clearTimeout(touchState.longPressTimer);
                     
                     const endX = e.changedTouches[0].clientX;

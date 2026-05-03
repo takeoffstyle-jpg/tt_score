@@ -23,10 +23,30 @@
         .set-count { font-size: 24px; font-weight: bold; color: #555; }
         .add-btn { width: 80%; height: 60px; font-size: 24px; font-weight: bold; border: none; border-radius: 10px; color: white; transition: background-color 0.2s ease, color 0.2s ease; }
         .history-container { flex: 1; overflow-y: auto; background: #fafafa; padding: 10px; border-top: 2px solid #444; }
-        .history-item { display: flex; justify-content: space-between; padding: 4px 8px; margin-bottom: 2px; background: white; font-size: 12px; border-bottom: 1px solid #ddd; }
-        .footer { display: flex; padding: 8px; background: #222; gap: 10px; }
-        .footer button { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #00897b; color: white; font-weight: bold; }
+        /* .history-item { display: flex; justify-content: space-between; padding: 4px 8px; margin-bottom: 2px; background: white; font-size: 12px; border-bottom: 1px solid #ddd; } */
+        .history-item {
+        /* flexを解除するか、開始位置を左端に固定する */
+        display: flex;
+        justify-content: flex-start; /* 左端から順に並べる */
+        padding: 4px 8px;
+        margin-bottom: 2px;
+        background: white;
+        font-size: 12px;
+        border-bottom: 1px solid #ddd;
+        /* --- ここが重要 --- */
+        /* 1. 全ての文字の幅を同じにする等幅フォントを指定 */
+        font-family: "Courier New", Consolas, Monaco, "BIZ UDゴシック", monospace;
         
+        /* 2. 連続する半角スペースが消えないようにする */
+        white-space: pre;
+        }
+
+        .history-item span {
+            /* 各スパンの間に一律の隙間を作る（必要に応じて） */
+            margin-right: 12px;
+            .footer { display: flex; padding: 8px; background: #222; gap: 10px; }
+            .footer button { flex: 1; padding: 12px; border: none; border-radius: 4px; background: #00897b; color: white; font-weight: bold; }
+        }
         /* フリック関連スタイル */
         .action-menu {
             position: fixed;
