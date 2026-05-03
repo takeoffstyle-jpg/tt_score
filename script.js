@@ -552,43 +552,58 @@ function showFlickGuide(player, x, y) {
     const guide = document.createElement('div');
     guide.id = 'flick-guide';
     guide.className = 'flick-guide';
-    guide.style.left = (x - 112) + 'px'; // 224/2 = 112
+    guide.style.left = (x - 112) + 'px';
     guide.style.top = (y - 112) + 'px';
     let directions;
-    if(player == 1){
+    if (player === 1) {
         directions = [
-            { label: 'F守', class: 'def' }, // upleft
-            { label: 'F続', class: 'pas' }, // up
-            { label: 'F攻', class: 'atk' }, // upright
-            { label: '守', class: 'def' },  // left
-            { label: '+', class: 'ctr' }, // center
-            { label: '攻', class: 'atk' },  // right
-            { label: 'B守', class: 'def' },  // downleft
-            { label: 'B続', class: 'pas' }, // down
-            { label: 'B攻', class: 'atk' } // downright
+            { label: 'F守', class: 'def', action: 'Def', rubberFace: 'Fore' },
+            { label: 'F続', class: 'pas', action: 'Pas', rubberFace: 'Fore' },
+            { label: 'F攻', class: 'atk', action: 'Atk', rubberFace: 'Fore' },
+            { label: '守', class: 'def', action: 'Def', rubberFace: '?' },
+            { label: 'x', class: 'ctr', action: 'Ctr' },
+            { label: '攻', class: 'atk', action: 'Atk', rubberFace: '?' },
+            { label: 'B守', class: 'def', action: 'Def', rubberFace: 'Back' },
+            { label: 'B続', class: 'pas', action: 'Pas', rubberFace: 'Back' },
+            { label: 'B攻', class: 'atk', action: 'Atk', rubberFace: 'Back' }
         ];
-    }else{
+    } else {
         directions = [
-            { label: 'F攻', class: 'atk' }, 
-            { label: 'F続', class: 'pas' }, 
-            { label: 'F守', class: 'def' }, 
-            { label: '攻', class: 'atk' },  
-            { label: '+', class: 'ctr' }, 
-            { label: '守', class: 'def' }, 
-            { label: 'B攻', class: 'atk' },
-            { label: 'B続', class: 'pas' },
-            { label: 'B守', class: 'def' }
+            { label: 'F攻', class: 'atk', action: 'Atk', rubberFace: 'Fore' },
+            { label: 'F続', class: 'pas', action: 'Pas', rubberFace: 'Fore' },
+            { label: 'F守', class: 'def', action: 'Def', rubberFace: 'Fore' },
+            { label: '攻', class: 'atk', action: 'Atk', rubberFace: '?' },
+            { label: 'x', class: 'ctr', action: 'Ctr' },
+            { label: '守', class: 'def', action: 'Def', rubberFace: '?' },
+            { label: 'B攻', class: 'atk', action: 'Atk', rubberFace: 'Back' },
+            { label: 'B続', class: 'pas', action: 'Pas', rubberFace: 'Back' },
+            { label: 'B守', class: 'def', action: 'Def', rubberFace: 'Back' }
         ];
     }
+
     directions.forEach(d => {
         const item = document.createElement('div');
         item.className = `guide-item ${d.class}`;
         item.textContent = d.label;
+        if (d.action === 'Ctr') {
+            // 中央は得点アクションなしで、ガイドをクローズするだけ
+            item.style.cursor = 'default';
+            item.addEventListener('click', () => {
+                closeFlickGuide();
+            });
+        }else if(d.action){
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                const flickInfo = { action: d.action, rubberFace: d.rubberFace };
+                window.lastFlickInfo = flickInfo;
+                closeFlickGuide();
+                showActionMenu(x, y, player, flickInfo);
+            });
+        }
         guide.appendChild(item);
     });
     
     document.body.appendChild(guide);
-    
     setTimeout(() => closeFlickGuide(), 10000);
 }
 
