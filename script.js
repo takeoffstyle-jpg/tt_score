@@ -26,8 +26,8 @@ function updateUI() {
     document.getElementById('score2').innerText = state.score2;
     document.getElementById('sets1').innerText = state.sets1;
     document.getElementById('sets2').innerText = state.sets2;
-    document.getElementById('name1').innerText = state.player1;
-    document.getElementById('name2').innerText = state.player2;
+    state.player1 = document.getElementById('name1').value;
+    state.player2 = document.getElementById('name2').value;
     const zone1 = document.getElementById('zone1');
     const zone2 = document.getElementById('zone2');
     zone1.style.backgroundColor = state.player1Color;
