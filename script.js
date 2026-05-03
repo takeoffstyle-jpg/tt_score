@@ -40,6 +40,12 @@ function updateUI() {
     btn2.style.backgroundColor = accent2;
     btn1.style.color = getTextColor(accent1);
     btn2.style.color = getTextColor(accent2);
+    const serveBtn1 = document.getElementById('serve-btn1');
+    const serveBtn2 = document.getElementById('serve-btn2');
+    serveBtn1.style.backgroundColor = accent1;
+    serveBtn2.style.backgroundColor = accent2;
+    serveBtn1.style.color = getTextColor(accent1);
+    serveBtn2.style.color = getTextColor(accent2);
     const server = calculateServer();
     zone1.classList.toggle('serving', server === 1);
     zone2.classList.toggle('serving', server === 2);
@@ -500,6 +506,112 @@ function commitFlickWithoutResult(player) {
     updateUI();
 }
 
+// サーブフリック検出: 上下で Fore/Back、左右で Long/Short
+function detectServeFlickDirection(startX, startY, endX, endY, isPlayer2) {
+    let dx = endX - startX;
+    let dy = endY - startY;
+    
+    // プレイヤー2は左右反転（内側が Long、外側が Short）
+    if (isPlayer2) dx = -dx;
+    
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    if (distance < 30) return null; // 最小フリック距離
+    
+    // 上下方向で Fore/Back を決定
+    const rubberFace = dy < 0 ? 'Fore' : 'Back';
+    
+    // 左右方向で Long/Short を決定（反転）
+    const distance_type = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'Short' : 'Long') : (dy < 0 ? 'Short' : 'Long');
+    
+    return { rubberFace, distance_type };
+}
+
+// サーブメニュー表示
+function showServeActionMenu(player, serveFlickInfo) {
+    closeServeActionMenu();
+    
+    const menu = document.createElement('div');
+    menu.id = 'serve-action-menu';
+    menu.className = 'action-menu';
+    menu.style.left = '50%';
+    menu.style.top = '50%';
+    menu.style.transform = 'translate(-50%, -50%)';
+    
+    const successActions = [
+        { label: 'ノータッチ', value: 'NoTouch' },
+        { label: '２バウンド', value: '2Bounce' },
+        { label: 'タッチ自陣', value: 'TouchOwn' },
+        { label: 'タッチアウト', value: 'TouchOut' },
+        { label: '相手空振り', value: 'Miss' },
+        { label: '不明', value: 'Unknown' }
+    ];
+    const ownMissActions = [
+        { label: '自陣ミス', value: 'MisshOwn' },
+        { label: 'アウト', value: 'MissOut' },
+        { label: '自空振り', value: 'MissAir' },
+        { label: 'その他', value: 'otherMiss' }
+    ];
+    
+    let html = '<div class="flick-info">サーブ: ' + serveFlickInfo.rubberFace + ' / ' + serveFlickInfo.distance_type + '</div>';
+    html += '<div class="menu-buttons">';
+    successActions.forEach(a => {
+        html += `<button onclick="selectServeAction(${player}, '${a.value}')\">${a.label}</button>`;
+    });
+    html += '</div>';
+    html += '<div class="fail-flick-info">自分のミス: ' + serveFlickInfo.rubberFace + ' / ' + serveFlickInfo.distance_type + '</div>';
+    html += '<div class="fail-menu-buttons">';
+    ownMissActions.forEach(a => {
+        html += `<button onclick="selectServeAction(${3-player}, '${a.value}')\">${a.label}</button>`;
+    });
+    html += '</div>';
+    
+    menu.innerHTML = html;
+    document.body.appendChild(menu);
+    window.lastServeFlickInfo = serveFlickInfo;
+    
+    // 背景をタップでメニュー閉じる
+    setTimeout(() => {
+        document.addEventListener('click', closeServeActionMenuOnBgClick);
+    }, 10);
+}
+
+function closeServeActionMenuOnBgClick(e) {
+    if (!e.target.closest('#serve-action-menu')) {
+        closeServeActionMenu();
+        document.removeEventListener('click', closeServeActionMenuOnBgClick);
+    }
+}
+
+function closeServeActionMenu() {
+    const menu = document.getElementById('serve-action-menu');
+    if (menu) menu.remove();
+}
+
+function selectServeAction(player, action2Value) {
+    const serveFlickInfo = window.lastServeFlickInfo;
+    if (!serveFlickInfo) return;
+    
+    const playerName = document.getElementById('name' + player).value;
+    const msg = playerName + ' サーブ [' + serveFlickInfo.rubberFace + '・' + serveFlickInfo.distance_type + ']';
+    
+    saveToUndo(); redoStack = [];
+    
+    // 失敗系の場合は相手側に点を入れ、サーバーは設定しない
+    // 成功系の場合はサーバーを設定
+    const failActionValues = ['MisshOwn', 'MissOut', 'MissAir', 'otherMiss'];
+    const isFail = failActionValues.includes(action2Value);
+    
+    if (!isFail) {
+        state.initialServer = player;
+    }
+    
+    const scorer = isFail ? player : null;
+    addLog(msg, `${state.score1}-${state.score2}`, scorer, serveFlickInfo.rubberFace, serveFlickInfo.distance_type, action2Value);
+    closeServeActionMenu();
+    window.lastServeFlickInfo = null;
+    updateUI();
+}
+
 // タッチイベントハンドラ初期化
 function initTouchHandlers() {
     [1,2].forEach(player=> {
@@ -556,6 +668,64 @@ function initTouchHandlers() {
             touchState.startX = 0;
             touchState.startY = 0;
             touchState.isFlick = false;
+        });
+    });
+    
+    // サーブボタンのハンドラ
+    [1,2].forEach(player=> {
+        const servebtn = document.getElementById('serve-btn' + player);
+        if (!servebtn) return;
+        
+        let serveStartX = 0, serveStartY = 0, serveStartTime = 0, serveLongPressTimer = null, serveIsFlick = false;
+        
+        servebtn.addEventListener('touchstart', e => {
+            serveStartX = e.touches[0].clientX;
+            serveStartY = e.touches[0].clientY;
+            serveStartTime = Date.now();
+            serveIsFlick = false;
+            closeServeActionMenu();
+            
+            // 長押し検出（1秒後にガイド表示）
+            serveLongPressTimer = setTimeout(() => {
+                if (!serveIsFlick) {
+                    // サーブガイド表示（将来実装可能）
+                }
+            }, 1000);
+        });
+        
+        servebtn.addEventListener('touchmove', e => {
+            if (serveStartX === null) return;
+            clearTimeout(serveLongPressTimer);
+            serveIsFlick = true;
+        });
+        
+        servebtn.addEventListener('touchend', e => {
+            clearTimeout(serveLongPressTimer);
+            
+            const endX = e.changedTouches[0].clientX;
+            const endY = e.changedTouches[0].clientY;
+            const duration = Date.now() - serveStartTime;
+            
+            // タップ判定（移動距離<30px、時間<200ms）
+            const dx = endX - serveStartX;
+            const dy = endY - serveStartY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const isQuickTap = distance < 30 && duration < 200 && !serveIsFlick;
+            
+            if (isQuickTap) {
+                // 通常のサーブ設定
+                setInitialServer(player);
+            } else if (serveIsFlick && distance > 30) {
+                // サーブフリック検出
+                const serveFlickResult = detectServeFlickDirection(serveStartX, serveStartY, endX, endY, player === 2);
+                if (serveFlickResult) {
+                    showServeActionMenu(player, serveFlickResult);
+                }
+            }
+            
+            serveStartX = 0;
+            serveStartY = 0;
+            serveIsFlick = false;
         });
     });
 }

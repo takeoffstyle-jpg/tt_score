@@ -268,7 +268,7 @@
 - 戻り値: なし
 
 #### `initTouchHandlers()`
-- 役割: プレイヤーの得点ボタンにタッチイベントハンドラを登録する。
+- 役割: プレイヤーの得点ボタン（+1）とサーブボタン（Sv）にタッチイベントハンドラを登録する。得点ボタンは通常フリック検出、サーブボタンはサーブ方向フリック検出に対応。
 - 引数: なし
 - 戻り値: なし
 
@@ -285,6 +285,45 @@
 - 役割: フリックガイドを非表示にする。
 - 引数: なし
 - 戻り値: なし
+
+#### `detectServeFlickDirection(startX, startY, endX, endY, isPlayer2)`
+- 役割: サーブボタンのフリック方向を判定し、サーブ方向（Fore/Back）と距離（Long/Short）を決定する。
+- 引数:
+  - `startX` (`number`): タッチ開始X座標
+  - `startY` (`number`): タッチ開始Y座標
+  - `endX` (`number`): タッチ終了X座標
+  - `endY` (`number`): タッチ終了Y座標
+  - `isPlayer2` (`boolean`): プレイヤー2エリアかどうか
+- 戻り値: `{ rubberFace: string, distance_type: string }` または `null`（rubberFace は `'Fore'` または `'Back'`、distance_type は `'Long'` または `'Short'`）
+- フリック方向: 上下で Fore/Back を決定、左右（内外）で Long/Short を決定（内側が Short、外側が Long）
+
+#### `showServeActionMenu(player, serveFlickInfo)`
+- 役割: サーブフリック結果に基づき、第2選択メニューを画面中央に表示する。メニューは2つのセクションに分かれている。
+  - 成功セクション: ノータッチ・２バウンド・タッチ自陣・タッチアウト・相手空振り・不明の6択
+  - 自分のミスセクション: 自陣ミス・アウト・自空振り・その他の4択（相手側に得点）
+- 引数:
+  - `player` (`number`): プレイヤー番号
+  - `serveFlickInfo` (`object`): サーブフリック判定結果（rubberFace と distance_type を含む）
+- 戻り値: なし
+
+#### `closeServeActionMenuOnBgClick(e)`
+- 役割: サーブメニュー外クリック時にメニューを閉じる。
+- 引数:
+  - `e` (`Event`): クリックイベント
+- 戻り値: なし
+
+#### `closeServeActionMenu()`
+- 役割: サーブアクションメニューを非表示にする。
+- 引数: なし
+- 戻り値: なし
+
+#### `selectServeAction(player, action2Value)`
+- 役割: サーブ選択を確定し、サーブ情報をログに記録する。成功系選択の場合は初期サーバーを設定し、失敗系選択（自分のミス）の場合は相手側にスコア記録を属する。
+- 引数:
+  - `player` (`number`): プレイヤー番号
+  - `action2Value` (`string`): 選択値（NoTouch/2Bounce/TouchOwn/TouchOut/Miss/Unknown/MisshOwn/MissOut/MissAir/otherMiss）
+- 戻り値: なし
+- 動作: 成功系の場合は `state.initialServer` を設定、失敗系の場合は相手側にスコア属性を記録
 
 ---
 
