@@ -405,16 +405,31 @@ function showActionMenu(endX, endY, player, flickResult) {
         { label: '２バウンド', value: '2Bounce' },
         { label: 'タッチ自陣', value: 'TouchOwn' },
         { label: 'タッチアウト', value: 'TouchOut' },
-        { label: '空振り', value: 'Miss' },
+        { label: '相手空振り', value: 'Miss' },
         { label: '不明', value: 'Unknown' }
     ];
+    const failActions = [
+        { label: '自陣ミス', value: 'MisshOwn' },
+        { label: 'アウト', value: 'MissOut' },
+        { label: '自空振り', value: 'MissAir' },
+        { label: 'その他', value: 'otherMiss' }
+    ];
     
-    let html = '<div class="flick-info">技術: ' + (flickResult.action || '?') + ' / 面: ' + (flickResult.rubberFace || '?') + '</div>';
+
+
+    let html = '<div class="flick-info">成功: ' + (flickResult.action || '?') + ' / 面: ' + (flickResult.rubberFace || '?') + '</div>';
     html += '<div class="menu-buttons">';
     actions.forEach(a => {
         html += `<button onclick="selectAction(${player}, '${a.value}')">${a.label}</button>`;
     });
     html += '</div>';
+    html += '<div class="fail-flick-info">失敗: ' + (flickResult.action || '?') + ' / 面: ' + (flickResult.rubberFace || '?') + '</div>';
+    html += '<div class="fail-menu-buttons">';
+    failActions.forEach(a => {
+        html += `<button onclick="selectAction(${3-player}, '${a.value}')">${a.label}</button>`;
+    });
+    html += '</div>';
+
     
     menu.innerHTML = html;
     document.body.appendChild(menu);
@@ -429,9 +444,9 @@ function showActionMenu(endX, endY, player, flickResult) {
 
 function closeActionMenuOnBgClick(e) {
     if (!e.target.closest('#action-menu')) {
-        if (window.currentFlickPlayer && window.lastFlickInfo) {
-            commitFlickWithoutResult(window.currentFlickPlayer);
-        }
+        // if (window.currentFlickPlayer && window.lastFlickInfo) {
+        //     commitFlickWithoutResult(window.currentFlickPlayer);
+        // }
         closeActionMenu();
         document.removeEventListener('click', closeActionMenuOnBgClick);
     }

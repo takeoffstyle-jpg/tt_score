@@ -78,7 +78,10 @@
 - `scorer` (`number`, 任意): `1` または `2`。画面の列配置で得点者を判断する。
 - `action1` (`string`, 任意): 技術タイプ（`Atk` / `Def` / `Pas`）。
 - `action2` (`string`, 任意): ラバー面（`Fore` / `Back` / `?`）。
-- `action3` (`string`, 任意): 第2選択結果（`NT` / `2B` / `T-Own` / `T-Out` / `Miss` / `Unknown`）。
+- `action3` (`string`, 任意): 第2選択結果。
+  - 成功時: `NoTouch` / `2Bounce` / `TouchOwn` / `TouchOut` / `Miss` / `Unknown`
+  - 失敗時（相手側に得点）: `MisshOwn` / `MissOut` / `MissAir` / `otherMiss`
+
 
 ### 関数一覧
 #### `resetState()`
@@ -230,7 +233,9 @@
 - 戻り値: `{ direction: string, action: string, rubberFace: string, angle: number }` または `null`
 
 #### `showActionMenu(endX, endY, player, flickResult)`
-- 役割: フリック結果に基づき、第2選択メニューを画面中央に表示する。メニュー項目はノータッチ・２バウンド・タッチ自陣・タッチアウト・空振り・不明の6択。
+- 役割: フリック結果に基づき、第2選択メニューを画面中央に表示する。メニューは2つのセクションに分かれている。
+  - 成功セクション: ノータッチ・２バウンド・タッチ自陣・タッチアウト・相手空振り・不明の6択
+  - 失敗セクション: 自陣ミス・アウト・自空振り・その他の4択（フリック下選手の相手側に得点）
 - 引数:
   - `endX` (`number`): タッチ終了X座標（未使用）
   - `endY` (`number`): タッチ終了Y座標（未使用）
@@ -250,10 +255,10 @@
 - 戻り値: なし
 
 #### `selectAction(player, action2Value)`
-- 役割: 第2選択を確定し、得点・詳細ログを記録する。
+- 役割: 第2選択を確定し、得点・詳細ログを記録する。失敗系選択の場合、得点者をフリック下選手の相手側に設定する。
 - 引数:
   - `player` (`number`): プレイヤー番号
-  - `action2Value` (`string`): 選択値（NoTouch/2Bounce/TouchOwn/TouchOut/Miss/Unknown）
+  - `action2Value` (`string`): 選択値（NoTouch/2Bounce/TouchOwn/TouchOut/Miss/Unknown/MisshOwn/MissOut/MissAir/otherMiss）
 - 戻り値: なし
 
 #### `commitFlickWithoutResult(player)`

@@ -65,10 +65,25 @@
             margin-bottom: 4px;
             border-bottom: 1px solid #ddd;
             text-align: center;
-            background: #f5f5f5;
+            background: #265dd5;
+            border-radius: 4px;
+        }
+        .fail-flick-info {
+            font-size: 12px;
+            font-weight: bold;
+            padding: 6px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            background: #e76b6b;
             border-radius: 4px;
         }
         .menu-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+        }
+        .fail-menu-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 4px;
@@ -78,7 +93,7 @@
             font-size: 14px;
             font-weight: bold;
             border: 1px solid #ddd;
-            background: #fff;
+            background: #39aae7;
             border-radius: 4px;
             cursor: pointer;
             transition: background 0.1s;
@@ -86,7 +101,20 @@
         .menu-buttons button:hover {
             background: #e3f2fd;
         }
-        
+        .fail-menu-buttons button {
+            padding: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            border: 1px solid #ddd;
+            background: #e08484;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .fail-menu-buttons button:hover {
+            background: #d32f2f;
+        }
+
         .flick-guide {
             position: fixed;
             width: 224px;
