@@ -199,7 +199,7 @@
             txt += `SERVER|${state.initialServer}\n`;
             txt += `HISTORY_START\n`;
             state.history.forEach(h => {
-                txt += `${h.time},${h.msg},${h.res}\n`;
+                txt += `${h.time},${h.msg},${h.res},${h.action1},${h.action2},${h.action3}\n`;
             });
             txt += `HISTORY_END`;
 
@@ -248,8 +248,15 @@
                         inHistory = false;
                     } else if (inHistory) {
                         const hParts = line.split(",");
-                        if (hParts.length === 3) {
-                            newHistory.push({ time: hParts[0], msg: hParts[1], res: hParts[2] });
+                        if (hParts.length === 6) {
+                            newHistory.push({
+                                time: hParts[0],
+                                msg: hParts[1],
+                                res: hParts[2],
+                                action1: hParts[3],
+                                action2: hParts[4],
+                                action3: hParts[5]
+                            });
                         }
                     }
                 });
