@@ -59,11 +59,12 @@
 - `sets2` (`number`): プレイヤー2 のセット獲得数。
 - `initialServer` (`number|null`): 試合開始時のサーバー。`1` または `2`、未設定時は `null`。
 - `scorer` (`number|null`): 直近得点者を表す論理プレイヤー番号。`1` または `2`。
-- `player1` (`string`): 画面左側 `zone1` に表示される選手名。
-- `player2` (`string`): 画面右側 `zone2` に表示される選手名。
-- `playSide` (`number`): `scorer` 値の画面対応を定義するフラグ。
+- `player1` (`string`): 画面左側 `zone1` に表示される選手名。画面上のゾーン位置を示すための値であり、論理プレイヤー番号とは直接対応しません。
+- `player2` (`string`): 画面右側 `zone2` に表示される選手名。こちらも画面上の配置ラベルです。
+- `playSide` (`number`): 画面上の表示列と論理得点者 `scorer` の対応を定義するフラグ。
   - `1` は `zone1` が `scorer = 1`、`zone2` が `scorer = 2`。
   - `2` は `zone1` が `scorer = 2`、`zone2` が `scorer = 1`。
+  - この値により、コートチェンジ後も `scorer` の画面表示位置を一貫して判定できる。
 - `player1Color` (`string`): `zone1` の背景カラー。
 - `player2Color` (`string`): `zone2` の背景カラー。
 - `history` (`Array<object>`): 履歴エントリの配列。
@@ -268,6 +269,7 @@
 
 #### `showFlickGuide(player, x, y)`
 - 役割: 長押し時に8方向フリックガイドを表示する。ガイドは224pxサイズで、各方向に短いラベルと色分けを表示する。
+- 追加挙動: ガイドの方向セルはクリック可能で、クリック時はその方向に対応する `action` / `rubberFace` を `showActionMenu()` に渡して第2選択メニューを開く。
 - 引数:
   - `player` (`number`): プレイヤー番号
   - `x` (`number`): 表示X座標
