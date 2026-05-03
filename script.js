@@ -7,7 +7,7 @@ function resetState(){
         scorer: null,
         player1:"選手A",
         player2:"選手B",
-        playSide: 1, // 1=左側がプレイヤー1、2=右側がプレイヤー1
+        playSide: 1, 
         player1Color: '#ffebee',
         player2Color: '#e3f2fd',
         history: []
