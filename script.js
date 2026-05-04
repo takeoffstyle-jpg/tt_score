@@ -68,13 +68,13 @@ function updateUI() {
         }
         if(h.scorer){
             return `<div class="history-item">
-            <span>${p(h.time,4)}</span>
             <span>${p(player1,5)}</span>
             <span>${p(player2,5)}</span>
+            <span>${p(`${h.res}`,5)}</span>
             <span>${p(h.action1,8)}</span>
             <span>${p(h.action2,4)}</span>
             <span>${p(h.action3,10)}</span>
-            <span>${p(`${h.res}`,5)}</span>
+            <span>${p(h.time,4)}</span>
             </div>`;
         }else{
             return `<div class="history-item"><span>${h.time}</span><span>${h.msg}</span><span>${h.res}</span></div>`;
