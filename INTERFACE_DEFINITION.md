@@ -294,7 +294,7 @@
   - `endX` (`number`): タッチ終了X座標
   - `endY` (`number`): タッチ終了Y座標
   - `isPlayer2` (`boolean`): プレイヤー2エリアかどうか
-- 戻り値: `{ rubberFace: string, distance_type: string }` または `null`（rubberFace は `'Fore'` または `'Back'`、distance_type は `'Long'` または `'Short'`）
+- 戻り値: `{ rubberFace: string, distance_type: string }` または `null`（rubberFace は `'Fore'` または `'Back'`、distance_type は `'Sv.Long'` または `'Sv.Short'`）
 - フリック方向: 上下で Fore/Back を決定、左右（内外）で Long/Short を決定（内側が Short、外側が Long）
 
 #### `showServeActionMenu(player, serveFlickInfo)`

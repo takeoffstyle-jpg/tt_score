@@ -415,7 +415,7 @@ function showActionMenu(endX, endY, player, flickResult) {
         { label: '不明', value: 'Unknown' }
     ];
     const failActions = [
-        { label: '自陣ミス', value: 'MisshOwn' },
+        { label: '自陣ミス', value: 'MissOwn' },
         { label: 'アウト', value: 'MissOut' },
         { label: '自空振り', value: 'MissAir' },
         { label: 'その他', value: 'otherMiss' }
@@ -521,7 +521,7 @@ function detectServeFlickDirection(startX, startY, endX, endY, isPlayer2) {
     const rubberFace = dy < 0 ? 'Fore' : 'Back';
     
     // 左右方向で Long/Short を決定（反転）
-    const distance_type = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'Short' : 'Long') : (dy < 0 ? 'Short' : 'Long');
+    const distance_type = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'Sv.Short' : 'Sv.Long') : (dy < 0 ? 'Sv.Short' : 'Sv.Long');
     
     return { rubberFace, distance_type };
 }
@@ -546,7 +546,7 @@ function showServeActionMenu(player, serveFlickInfo) {
         { label: '不明', value: 'Unknown' }
     ];
     const ownMissActions = [
-        { label: '自陣ミス', value: 'MisshOwn' },
+        { label: '自陣ミス', value: 'MissOwn' },
         { label: 'アウト', value: 'MissOut' },
         { label: '自空振り', value: 'MissAir' },
         { label: 'その他', value: 'otherMiss' }
@@ -596,17 +596,11 @@ function selectServeAction(player, action2Value) {
     
     saveToUndo(); redoStack = [];
     
-    // 失敗系の場合は相手側に点を入れ、サーバーは設定しない
-    // 成功系の場合はサーバーを設定
-    const failActionValues = ['MisshOwn', 'MissOut', 'MissAir', 'otherMiss'];
-    const isFail = failActionValues.includes(action2Value);
+    state['score' + player]++;
+    // コートチェンジしても不変なScorer
+    state.scorer = (state.playSide === player) ? 1 : 2;
     
-    if (!isFail) {
-        state.initialServer = player;
-    }
-    
-    const scorer = isFail ? player : null;
-    addLog(msg, `${state.score1}-${state.score2}`, scorer, serveFlickInfo.rubberFace, serveFlickInfo.distance_type, action2Value);
+    addLog(msg, `${state.score1}-${state.score2}`, state.scorer, serveFlickInfo.distance_type, serveFlickInfo.rubberFace, action2Value);
     closeServeActionMenu();
     window.lastServeFlickInfo = null;
     updateUI();
@@ -714,7 +708,7 @@ function initTouchHandlers() {
             
             if (isQuickTap) {
                 // 通常のサーブ設定
-                setInitialServer(player);
+                // setInitialServer(player);
             } else if (serveIsFlick && distance > 30) {
                 // サーブフリック検出
                 const serveFlickResult = detectServeFlickDirection(serveStartX, serveStartY, endX, endY, player === 2);
