@@ -175,10 +175,16 @@ function checkSet() {
     if ((state.score1 >= 11 || state.score2 >= 11) && Math.abs(state.score1 - state.score2) >= 2) {
         if (state.score1 > state.score2) state.sets1++; else state.sets2++;
         addLog("--- セット終了 ---", `${state.score1}-${state.score2}`);
-        state.score1 = 0; state.score2 = 0;
-        if (state.initialServer) state.initialServer = 3 - state.initialServer;
-        doSwapCourts({ skipUndo: true, skipLog: true });
-        addLog("自動コートチェンジ", `${state.score1}-${state.score2}`);
+        updateUI();  // 最終スコアを表示
+        
+        setTimeout(() => {
+            alert (`セット終了！\n最終スコア: ${state.player1} ${state.score1}-${state.score2} ${state.player2}\nセット数: ${state.sets1}-${state.sets2}`);
+            state.score1 = 0; state.score2 = 0;
+            if (state.initialServer) state.initialServer = 3 - state.initialServer;
+            doSwapCourts({ skipUndo: true, skipLog: true });
+            addLog("コートチェンジ", `${state.score1}-${state.score2}`);
+            updateUI();
+        }, 300);  // 300msの遅延で最終スコアを見やすくする
     }
 }
 
