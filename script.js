@@ -68,10 +68,10 @@ function updateUI() {
         }
         if(h.scorer){
             return `<div class="history-item">
-            <span>${p(h.time,8)}</span>
+            <span>${p(h.time,4)}</span>
             <span>${p(player1,5)}</span>
             <span>${p(player2,5)}</span>
-            <span>${p(h.action1,3)}</span>
+            <span>${p(h.action1,8)}</span>
             <span>${p(h.action2,4)}</span>
             <span>${p(h.action3,10)}</span>
             <span>${p(`${h.res}`,5)}</span>
@@ -172,7 +172,7 @@ function addPoint(p) {
 }
 
 function checkSet() {
-    if ((state.score1 >= 11 || state.score2 >= 11) && Math.abs(state.score1 - state.score2) >= 2) {
+    if ((state.score1 >= 11 || state.score2 >= 11) && Math.abs(state.score1 - state.score2) >= 2) {       
         if (state.score1 > state.score2) state.sets1++; else state.sets2++;
         addLog("--- セット終了 ---", `${state.score1}-${state.score2}`);
         updateUI();  // 最終スコアを表示
@@ -527,7 +527,7 @@ function detectServeFlickDirection(startX, startY, endX, endY, isPlayer2) {
     const rubberFace = dy < 0 ? 'Fore' : 'Back';
     
     // 左右方向で Long/Short を決定（反転）
-    const distance_type = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'Sv.Short' : 'Sv.Long') : (dy < 0 ? 'Sv.Short' : 'Sv.Long');
+    const distance_type = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? 'Sv.S' : 'Sv.L') : (dy < 0 ? 'Sv.S' : 'Sv.L');
     
     return { rubberFace, distance_type };
 }
